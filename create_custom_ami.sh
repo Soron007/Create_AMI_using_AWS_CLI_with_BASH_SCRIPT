@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Load variables from an external file (e.g., `config.env`)
+# Loading variables from config.env (did not push to github)
 if [ -f config.env ]; then
     source config.env
 else
@@ -8,16 +8,16 @@ else
     exit 1
 fi
 
-# Check for required variables
+
 if [[ -z "$BASE_AMI" || -z "$INSTANCE_TYPE" || -z "$KEY_NAME" || -z "$SECURITY_GROUP" || -z "$SUBNET_ID" ]]; then
     echo "Error: One or more required variables are missing in config.env"
     exit 1
 fi
 
-# Variables
+
 AMI_NAME="CustomAMI-Ubuntu-$(date +%Y-%m-%d)"
 
-# Step 1: Launch EC2 Instance
+
 echo "Launching EC2 instance with Ubuntu..."
 INSTANCE_ID=$(aws ec2 run-instances \
     --image-id $BASE_AMI \
@@ -36,12 +36,12 @@ fi
 
 echo "Instance ID: $INSTANCE_ID"
 
-# Step 2: Wait for Instance to be Running
+
 echo "Waiting for the instance to be running..."
 aws ec2 wait instance-running --instance-ids $INSTANCE_ID
 echo "Instance is running."
 
-# Step 3: Connect and Install Software
+
 PUBLIC_IP=$(aws ec2 describe-instances \
     --instance-ids $INSTANCE_ID \
     --query "Reservations[0].Instances[0].PublicIpAddress" \
@@ -59,18 +59,18 @@ ssh -o StrictHostKeyChecking=no -i "$KEY_NAME.pem" ubuntu@$PUBLIC_IP <<EOF
     sudo apt-get update -y
     sudo apt-get upgrade -y
 
-    # Install Docker
+    # For Docker
     sudo apt-get install -y docker.io
     sudo systemctl start docker
     sudo systemctl enable docker
     sudo usermod -aG docker ubuntu
 
-    # Install Ansible
+    # For Ansible
     sudo apt-get install -y software-properties-common
     sudo add-apt-repository --yes --update ppa:ansible/ansible
     sudo apt-get install -y ansible
 
-    # Install Jenkins
+    # For Jenkins
     sudo apt-get install -y openjdk-11-jdk
     wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
     sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
@@ -104,7 +104,7 @@ fi
 
 echo "AMI ID: $AMI_ID"
 
-# Step 5: Terminate the Instance
+# Terminating the Instance after creating custom AMI
 echo "Terminating the EC2 instance..."
 aws ec2 terminate-instances --instance-ids $INSTANCE_ID
 aws ec2 wait instance-terminated --instance-ids $INSTANCE_ID
